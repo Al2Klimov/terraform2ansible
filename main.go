@@ -49,9 +49,6 @@ func main() {
 
 	out := bufio.NewWriter(os.Stdout)
 	for _, resource := range tfJson.Values.RootModule.Resources {
-		if resource.Name != "" {
-			fmt.Fprint(out, resource.Name)
-		}
 		if resource.Values.Name != "" {
 			fmt.Fprint(out, resource.Values.Name)
 		}
