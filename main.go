@@ -1,9 +1,10 @@
 package main
 
 import (
-	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -47,8 +48,10 @@ func main() {
 		return
 	}
 
-	out := bufio.NewWriter(os.Stdout)
 	for _, resource := range tfJson.Values.RootModule.Resources {
+		out := &bytes.Buffer{}
+		ok := false
+
 		if resource.Values.Name != "" {
 			fmt.Fprint(out, resource.Values.Name)
 		}
@@ -56,16 +59,19 @@ func main() {
 		if len(resource.Values.Network) > 0 && resource.Values.Network[0].FixedIpV4 != "" {
 			fmt.Fprint(out, " ansible_host=")
 			fmt.Fprint(out, resource.Values.Network[0].FixedIpV4)
+			ok = true
 		}
 
 		if resource.Values.Ipv4Address != "" {
 			fmt.Fprint(out, " ansible_host=")
 			fmt.Fprint(out, resource.Values.Ipv4Address)
+			ok = true
 		}
 
 		if resource.Values.PublicIp != "" {
 			fmt.Fprint(out, " ansible_host=")
 			fmt.Fprint(out, resource.Values.PublicIp)
+			ok = true
 		}
 
 		if match := distro.FindString(resource.Values.Image); match != "" {
@@ -79,7 +85,9 @@ func main() {
 		}
 
 		out.Write([]byte{'\n'})
-	}
 
-	out.Flush()
+		if ok {
+			io.Copy(os.Stdout, out)
+		}
+	}
 }
